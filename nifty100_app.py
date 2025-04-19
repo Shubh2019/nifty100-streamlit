@@ -39,7 +39,7 @@ nifty_100_tickers = [
     'TATAMOTORS.NS', 'TATASTEEL.NS', 'TCS.NS', 'TECHM.NS', 'TITAN.NS',
     'TORNTPHARM.NS', 'TRENT.NS', 'TVSMOTOR.NS', 'UBL.NS', 'ULTRACEMCO.NS',
     'UPL.NS', 'VEDL.NS', 'VOLTAS.NS', 'WIPRO.NS', 'ZEEL.NS'
-]  # Add full list for production
+] # Add full list for production
 
 # Optional sector mapping
 sector_map = {
@@ -90,7 +90,7 @@ if len(data_pct_change.index) > 6:
         format="%Y-%m-%d"
     )
 
-    selected_data = data_pct_change.loc[:date_slider]
+    selected_data = data_pct_change.loc[:str(date_slider)]
     selected_returns = selected_data.T
     kmeans_dynamic = KMeans(n_clusters=10, random_state=42, n_init='auto')
     dynamic_clusters = kmeans_dynamic.fit_predict(selected_returns)
@@ -112,7 +112,7 @@ cluster_history = pd.DataFrame(index=nifty_100_tickers, columns=date_range)
 
 for date in date_range:
     try:
-        rolling_returns = data_pct_change.loc[:date].T
+        rolling_returns = data_pct_change.loc[:str(date)].T
         if len(rolling_returns.columns) > 4:
             kmeans = KMeans(n_clusters=10, random_state=42, n_init='auto')
             cluster_labels = kmeans.fit_predict(rolling_returns)
