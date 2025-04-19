@@ -1,4 +1,3 @@
-
 import streamlit as st
 import yfinance as yf
 import pandas as pd
@@ -22,24 +21,27 @@ nifty_100_tickers = [
 
 # Load data
 with st.spinner('📈 Fetching stock data...'):
-    raw_data = yf.download(nifty_100_tickers, start=start_date, end=end_date, group_by='ticker')
+    raw_data = yf.download(nifty_100_tickers, start=start_date, end=end_date, group_by='ticker', auto_adjust=False)
     if raw_data.empty:
         st.error("Could not fetch data for any tickers. Please try again later.")
         st.stop()
 
-    # Build Adj Close manually from grouped data
-    adj_close = pd.DataFrame()
+    # Build price table using Close or Adj Close
+    close_prices = pd.DataFrame()
     for ticker in nifty_100_tickers:
         try:
-            adj_close[ticker] = raw_data[ticker]['Adj Close']
+            if 'Adj Close' in raw_data[ticker]:
+                close_prices[ticker] = raw_data[ticker]['Adj Close']
+            elif 'Close' in raw_data[ticker]:
+                close_prices[ticker] = raw_data[ticker]['Close']
         except KeyError:
             continue
 
-    if adj_close.empty:
-        st.error("Adjusted Close prices are unavailable for all tickers.")
+    if close_prices.empty:
+        st.error("Closing prices are unavailable for all tickers.")
         st.stop()
     else:
-        data = adj_close
+        data = close_prices
 
 # Drop incomplete stocks
 data.dropna(axis=1, inplace=True)
@@ -49,8 +51,16 @@ returns = ((data.iloc[-1] - data.iloc[0]) / data.iloc[0]) * 100
 returns = returns.sort_values(ascending=False)
 
 # Download NIFTY Index and compare
-nifty_index = yf.download('^NSEI', start=start_date, end=end_date)['Adj Close']
-nifty_return = (nifty_index.iloc[-1] - nifty_index.iloc[0]) / nifty_index.iloc[0] * 100
+nifty_index_data = yf.download('^NSEI', start=start_date, end=end_date)
+if 'Adj Close' in nifty_index_data:
+    nifty_series = nifty_index_data['Adj Close']
+elif 'Close' in nifty_index_data:
+    nifty_series = nifty_index_data['Close']
+else:
+    st.error("NIFTY index data unavailable.")
+    st.stop()
+
+nifty_return = (nifty_series.iloc[-1] - nifty_series.iloc[0]) / nifty_series.iloc[0] * 100
 
 # Plot returns
 fig, ax = plt.subplots(figsize=(15, 8))
