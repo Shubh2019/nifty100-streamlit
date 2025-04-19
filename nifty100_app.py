@@ -1,13 +1,12 @@
+import streamlit as st
 import yfinance as yf
 import pandas as pd
 import matplotlib.pyplot as plt
 from datetime import datetime
 
-# Step 1: Define the date range
-start_date = "2025-04-01"
-end_date = datetime.today().strftime('%Y-%m-%d')
+st.set_page_config(page_title="Nifty 100 Daily Returns", layout="wide")
+st.title("📈 Nifty 100: Top 10 Performers Since April 1, 2025")
 
-# Step 2: List of Nifty 100 companies (example subset, you can expand to full 100)
 nifty_100_tickers = [
     'ADANIENT.NS', 'ADANIGREEN.NS', 'ADANIPORTS.NS', 'ADANITRANS.NS', 'AMBUJACEM.NS',
     'APOLLOHOSP.NS', 'ASIANPAINT.NS', 'AUROPHARMA.NS', 'AXISBANK.NS', 'BAJAJ-AUTO.NS',
@@ -30,33 +29,42 @@ nifty_100_tickers = [
     'TATAMOTORS.NS', 'TATASTEEL.NS', 'TCS.NS', 'TECHM.NS', 'TITAN.NS',
     'TORNTPHARM.NS', 'TRENT.NS', 'TVSMOTOR.NS', 'UBL.NS', 'ULTRACEMCO.NS',
     'UPL.NS', 'VEDL.NS', 'VOLTAS.NS', 'WIPRO.NS', 'ZEEL.NS'
-    ]
+]
 
+start_date = "2025-04-01"
+end_date = datetime.today().strftime('%Y-%m-%d')
 
-# Step 3: Download stock data
-data = yf.download(nifty_100_tickers, start=start_date, end=end_date)['Adj Close']
+with st.spinner("📥 Fetching Nifty 100 data..."):
+    try:
+        df = yf.download(nifty_100_tickers, start=start_date, end=end_date)['Adj Close']
+    except Exception as e:
+        st.error(f"Download failed: {e}")
+        st.stop()
 
-# Step 4: Calculate percentage change from April 1 to today
-returns = (data.iloc[-1] - data.iloc[0]) / data.iloc[0] * 100
-returns = returns.sort_values(ascending=False)
+    df.dropna(axis=1, inplace=True)
 
-# Step 5: Plotting
-plt.figure(figsize=(15, 8))
-bars = plt.bar(returns.index, returns.values, color='grey')
+    if df.empty:
+        st.error("Downloaded data is empty. Try again later.")
+        st.stop()
 
-# Highlight top 10
-for i in range(10):
-    bars[i].set_color('green')
+returns = ((df - df.iloc[0]) / df.iloc[0]) * 100
+final_returns = returns.iloc[-1].sort_values(ascending=False)
+top10 = final_returns.head(10)
 
-# Labels and title
-plt.xticks(rotation=90)
-plt.ylabel('Return % since 1 April 2025')
-plt.title('Nifty 100 Performance (Top 10 Highlighted)')
+st.markdown("### 🏆 Top 10 Performing Nifty 100 Stocks Since April 1")
+fig, ax = plt.subplots(figsize=(12, 6))
+for ticker in df.columns:
+    if ticker in top10.index:
+        ax.plot(returns.index, returns[ticker], linewidth=2.5, label=ticker)
+        ax.text(returns.index[-1], returns[ticker].iloc[-1], ticker.replace(".NS", ""), fontsize=8, color='green')
+    else:
+        ax.plot(returns.index, returns[ticker], color='gray', alpha=0.2, linewidth=0.5)
 
-# Annotate top 10
-for i in range(10):
-    plt.text(i, returns.values[i]+0.5, f'{returns.values[i]:.1f}%', ha='center', fontsize=9)
+ax.set_title("Nifty 100 Stock Returns (Apr 1 to Today)")
+ax.set_ylabel("% Return")
+ax.set_xlabel("Date")
+ax.legend(loc='upper left', fontsize='small')
+ax.grid(True, linestyle='--', alpha=0.5)
+st.pyplot(fig)
 
-plt.tight_layout()
-plt.grid(True, axis='y', linestyle='--', alpha=0.7)
-plt.show()
+st.dataframe(top10.rename("% Return"))
