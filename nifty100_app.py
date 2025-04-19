@@ -41,8 +41,17 @@ start_date = "2025-04-01"
 end_date = datetime.today().strftime('%Y-%m-%d')
 
 with st.spinner("📥 Downloading data..."):
-    df = yf.download(nifty_100_tickers, start=start_date, end=end_date)['Adj Close']
+    try:
+        df = yf.download(nifty_100_tickers, start=start_date, end=end_date)['Adj Close']
+    except Exception as e:
+        st.error(f"Download failed: {e}")
+        st.stop()
+
     df.dropna(axis=1, inplace=True)
+
+    if df.empty:
+        st.error("Downloaded data is empty. Try again later or with fewer tickers.")
+        st.stop()
 
 returns = ((df - df.iloc[0]) / df.iloc[0]) * 100
 
