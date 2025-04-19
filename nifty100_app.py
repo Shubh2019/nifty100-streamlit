@@ -39,8 +39,7 @@ nifty_100_tickers = [
     'TATAMOTORS.NS', 'TATASTEEL.NS', 'TCS.NS', 'TECHM.NS', 'TITAN.NS',
     'TORNTPHARM.NS', 'TRENT.NS', 'TVSMOTOR.NS', 'UBL.NS', 'ULTRACEMCO.NS',
     'UPL.NS', 'VEDL.NS', 'VOLTAS.NS', 'WIPRO.NS', 'ZEEL.NS'
-]
-  # Add full list for production
+]  # Add full list for production
 
 # Optional sector mapping
 sector_map = {
@@ -81,8 +80,8 @@ data_pct_change = ((data - data.iloc[0]) / data.iloc[0]) * 100
 # 🎞️ Animate cluster evolution
 if len(data_pct_change.index) > 6:
     st.markdown("### 🎞️ Animate Cluster Evolution")
-    slider_min = pd.to_datetime(data_pct_change.index[min(5, len(data_pct_change.index)-2)]).to_pydatetime()
-    slider_max = pd.to_datetime(data_pct_change.index[-1]).to_pydatetime()
+    slider_min = pd.to_datetime(data_pct_change.index[min(5, len(data_pct_change.index)-2)])
+    slider_max = pd.to_datetime(data_pct_change.index[-1])
     date_slider = st.slider(
         "Select Date for Clustering",
         min_value=slider_min,
@@ -91,7 +90,7 @@ if len(data_pct_change.index) > 6:
         format="%Y-%m-%d"
     )
 
-    selected_data = data_pct_change.loc[:str(date_slider)]
+    selected_data = data_pct_change.loc[:date_slider]
     selected_returns = selected_data.T
     kmeans_dynamic = KMeans(n_clusters=10, random_state=42, n_init='auto')
     dynamic_clusters = kmeans_dynamic.fit_predict(selected_returns)
