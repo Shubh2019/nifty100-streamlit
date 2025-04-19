@@ -8,7 +8,7 @@ start_date = "2025-04-01"
 end_date = datetime.today().strftime('%Y-%m-%d')
 
 # Step 2: List of Nifty 100 companies (example subset, you can expand to full 100)
-    nifty_100_tickers = [
+nifty_100_tickers = [
     'ADANIENT.NS', 'ADANIGREEN.NS', 'ADANIPORTS.NS', 'ADANITRANS.NS', 'AMBUJACEM.NS',
     'APOLLOHOSP.NS', 'ASIANPAINT.NS', 'AUROPHARMA.NS', 'AXISBANK.NS', 'BAJAJ-AUTO.NS',
     'BAJAJFINSV.NS', 'BAJFINANCE.NS', 'BANDHANBNK.NS', 'BANKBARODA.NS', 'BEL.NS',
