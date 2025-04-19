@@ -51,6 +51,9 @@ with st.spinner("📥 Fetching Nifty 100 data..."):
 
 returns = ((df - df.iloc[0]) / df.iloc[0]) * 100
 
+# Transpose returns for clustering: rows=companies, columns=return on each date compared to Apr 1
+X = returns.T
+
 # --- Top 5 markers per day ---
 day_top5 = returns.apply(lambda row: row.sort_values(ascending=False).head(5), axis=1)
 
@@ -58,17 +61,14 @@ day_top5 = returns.apply(lambda row: row.sort_values(ascending=False).head(5), a
 st.markdown("### 📊 Nifty 100 Stock Returns with Top 5 Daily Markers")
 fig, ax = plt.subplots(figsize=(14, 7))
 
-# Plot all with lighter lines
 for ticker in df.columns:
     ax.plot(returns.index, returns[ticker], color='gray', alpha=0.3, linewidth=0.8)
 
-# Plot top 10 with thinner colored lines
 final_returns = returns.iloc[-1].sort_values(ascending=False)
 top10 = final_returns.head(10)
 for ticker in top10.index:
     ax.plot(returns.index, returns[ticker], linewidth=1.5, label=ticker)
 
-# Plot green dots for daily top 5
 for date in day_top5.index:
     for ticker in day_top5.loc[date].index:
         ax.plot(date, returns.loc[date, ticker], 'go', markersize=4)
@@ -84,19 +84,21 @@ st.pyplot(fig)
 # --- Cluster Analysis ---
 st.markdown("### 🧠 Clustering Nifty 100 Stocks (5 Groups)")
 kmeans = KMeans(n_clusters=5, random_state=42, n_init='auto')
-cluster_labels = kmeans.fit_predict(returns.T)
-cluster_df = pd.DataFrame({'Ticker': returns.columns, 'Cluster': cluster_labels})
+cluster_labels = kmeans.fit_predict(X)
+cluster_df = pd.DataFrame({'Ticker': X.index, 'Cluster': cluster_labels})
 
-# Plot per-cluster returns
-for c in sorted(cluster_df['Cluster'].unique()):
-    st.markdown(f"#### Cluster {c + 1}")
-    fig_cluster, ax_cluster = plt.subplots(figsize=(12, 5))
-    cluster_members = cluster_df[cluster_df['Cluster'] == c]['Ticker']
+cluster_means = X.groupby(cluster_labels).apply(lambda x: x.iloc[:, -1].mean())
+cluster_order = cluster_means.sort_values(ascending=False).index
+
+for rank, cluster_id in enumerate(cluster_order, 1):
+    st.markdown(f"#### Cluster {cluster_id + 1} — Rank #{rank} by Avg Return on Last Day")
+    fig_cluster, ax_cluster = plt.subplots(figsize=(14, 6))
+    cluster_members = cluster_df[cluster_df['Cluster'] == cluster_id]['Ticker']
     for ticker in cluster_members:
-        ax_cluster.plot(returns.index, returns[ticker], label=ticker.replace(".NS", ""), linewidth=1.5)
-    ax_cluster.set_title(f"Stock Returns - Cluster {c + 1}")
+        ax_cluster.plot(returns.index, returns.loc[:, ticker], label=ticker.replace(".NS", ""), linewidth=1.5)
+    ax_cluster.set_title(f"Cluster {cluster_id + 1} — Stocks in Rank #{rank} Cluster")
     ax_cluster.set_ylabel("% Return")
     ax_cluster.set_xlabel("Date")
     ax_cluster.grid(True, linestyle='--', alpha=0.5)
-    ax_cluster.legend(fontsize='x-small', ncol=3)
+    ax_cluster.legend(fontsize='x-small', ncol=4)
     st.pyplot(fig_cluster)
