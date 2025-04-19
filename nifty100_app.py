@@ -3,16 +3,19 @@ import yfinance as yf
 import pandas as pd
 import matplotlib.pyplot as plt
 from datetime import datetime
+from sklearn.cluster import KMeans
+from matplotlib import cm
+import numpy as np
 
 # Config
 st.set_page_config(page_title="Nifty 100 Daily Tracker", layout="wide")
-st.title("📈 Nifty 100 Daily % Change Tracker (Line Chart)")
+st.title("📈 Nifty 100 Daily % Change Cluster Tracker")
 
 # Date Range
 start_date = "2025-04-01"
 end_date = datetime.today().strftime('%Y-%m-%d')
 
-# Full Nifty 100 Tickers List (example subset, replace with full list)
+# Nifty 100 Tickers List (full list)
 nifty_100_tickers = [
     'ADANIENT.NS', 'ADANIGREEN.NS', 'ADANIPORTS.NS', 'ADANITRANS.NS', 'AMBUJACEM.NS',
     'APOLLOHOSP.NS', 'ASIANPAINT.NS', 'AUROPHARMA.NS', 'AXISBANK.NS', 'BAJAJ-AUTO.NS',
@@ -67,24 +70,30 @@ data.dropna(axis=1, inplace=True)
 # Normalize returns relative to April 1 (as percentage change)
 data_pct_change = ((data - data.iloc[0]) / data.iloc[0]) * 100
 
-# Plot line chart of percentage change
+# Transpose so rows = stocks, columns = daily % returns
+stock_returns = data_pct_change.T
+
+# Apply clustering (KMeans with 10 clusters)
+kmeans = KMeans(n_clusters=10, random_state=42, n_init='auto')
+clusters = kmeans.fit_predict(stock_returns)
+
+# Assign cluster labels
+stock_returns['Cluster'] = clusters
+cluster_colors = cm.get_cmap('Spectral', 10)
+colors = [cluster_colors(c) for c in clusters]
+
+# Plot line chart with cluster coloring
 fig, ax = plt.subplots(figsize=(18, 10))
-for col in data_pct_change.columns:
-    ax.plot(data_pct_change.index, data_pct_change[col], label=col, linewidth=0.8)
+for i, stock in enumerate(stock_returns.index):
+    ax.plot(data_pct_change.index, data_pct_change[stock], color=colors[i], linewidth=0.9, label=stock)
 
-# Highlight top 5 performers on each date with green dots and ticker labels
-highlight_dates = data_pct_change.index
-for date in highlight_dates:
-    top5 = data_pct_change.loc[date].sort_values(ascending=False).head(5)
-    for ticker in top5.index:
-        ax.plot(date, top5[ticker], 'go', markersize=4)
-        ax.text(date, top5[ticker] + 1, ticker.replace('.NS', ''), fontsize=6, color='green', ha='center')
-
-ax.set_title("% Price Change of Nifty 100 Stocks Since April 1, 2025")
+ax.set_title("% Price Change of Nifty 100 Stocks Since April 1, 2025 (Clustered)")
 ax.set_ylabel("% Change")
 ax.set_xlabel("Date")
 ax.grid(True, linestyle='--', alpha=0.5)
-ax.legend(loc='upper left', fontsize='xx-small', ncol=2, frameon=False)
+
+# Optional legend
+# ax.legend(loc='upper left', fontsize='xx-small', ncol=2, frameon=False)
 
 # Show chart
 st.pyplot(fig)
