@@ -18,10 +18,15 @@ nifty_100_tickers = [
 start_date = "2025-04-01"
 end_date = datetime.today().strftime('%Y-%m-%d')
 
+<<<<<<< HEAD
 # Download data
 with st.spinner("📥 Downloading data..."):
     df = yf.download(nifty_100_tickers, start=start_date, end=end_date)['Adj Close']
     df.dropna(axis=1, inplace=True)
+=======
+# Nifty 100 Tickers List (full list)
+nifty_100_tickers = [...]
+>>>>>>> parent of 8da5b44 (Update nifty100_app.py)
 
 returns = ((df - df.iloc[0]) / df.iloc[0]) * 100
 
