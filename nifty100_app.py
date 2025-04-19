@@ -22,12 +22,24 @@ nifty_100_tickers = [
 
 # Load data
 with st.spinner('📈 Fetching stock data...'):
-    raw_data = yf.download(nifty_100_tickers, start=start_date, end=end_date)
-    if 'Adj Close' in raw_data.columns:
-        data = raw_data['Adj Close']
-    else:
-        st.error("Could not fetch adjusted close prices for any tickers. Please try again later.")
+    raw_data = yf.download(nifty_100_tickers, start=start_date, end=end_date, group_by='ticker')
+    if raw_data.empty:
+        st.error("Could not fetch data for any tickers. Please try again later.")
         st.stop()
+
+    # Build Adj Close manually from grouped data
+    adj_close = pd.DataFrame()
+    for ticker in nifty_100_tickers:
+        try:
+            adj_close[ticker] = raw_data[ticker]['Adj Close']
+        except KeyError:
+            continue
+
+    if adj_close.empty:
+        st.error("Adjusted Close prices are unavailable for all tickers.")
+        st.stop()
+    else:
+        data = adj_close
 
 # Drop incomplete stocks
 data.dropna(axis=1, inplace=True)
