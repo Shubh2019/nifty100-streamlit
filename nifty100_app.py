@@ -21,10 +21,16 @@ nifty_100_tickers = [
 ]
 
 # Load data
-data_load_state = st.text('Loading data...')
-data = yf.download(nifty_100_tickers, start=start_date, end=end_date)['Adj Close']
-data.dropna(axis=1, inplace=True)  # Drop incomplete stocks
-data_load_state.text('')
+with st.spinner('📈 Fetching stock data...'):
+    raw_data = yf.download(nifty_100_tickers, start=start_date, end=end_date)
+    if 'Adj Close' in raw_data.columns:
+        data = raw_data['Adj Close']
+    else:
+        st.error("Could not fetch adjusted close prices for any tickers. Please try again later.")
+        st.stop()
+
+# Drop incomplete stocks
+data.dropna(axis=1, inplace=True)
 
 # Calculate returns
 returns = ((data.iloc[-1] - data.iloc[0]) / data.iloc[0]) * 100
