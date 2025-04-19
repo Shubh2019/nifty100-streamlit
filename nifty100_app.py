@@ -71,8 +71,11 @@ for i in range(min(10, len(bars))):
     bars[i].set_color('green')
     ax.text(i, returns.values[i]+0.5, f"{returns.values[i]:.1f}%", ha='center', fontsize=8)
 
-# Add NIFTY index line
-ax.axhline(y=nifty_return, color='red', linestyle='--', label=f'NIFTY Index Return: {nifty_return:.2f}%')
+# Add NIFTY index line safely with type check
+try:
+    ax.axhline(y=float(nifty_return), color='red', linestyle='--', label=f'NIFTY Index Return: {float(nifty_return):.2f}%')
+except (ValueError, TypeError):
+    st.warning("NIFTY index return could not be plotted.")
 
 # Label formatting
 ax.set_ylabel("Return %")
