@@ -3,9 +3,11 @@ import yfinance as yf
 import pandas as pd
 import matplotlib.pyplot as plt
 from datetime import datetime
+from sklearn.cluster import KMeans
+import numpy as np
 
 st.set_page_config(page_title="Nifty 100 Daily Returns", layout="wide")
-st.title("📈 Nifty 100: Top 10 Performers Since April 1, 2025")
+st.title("📈 Nifty 100 Performance Analysis (Clusters + Top Performers)")
 
 nifty_100_tickers = [
     'ADANIENT.NS', 'ADANIGREEN.NS', 'ADANIPORTS.NS', 'ADANITRANS.NS', 'AMBUJACEM.NS',
@@ -48,23 +50,53 @@ with st.spinner("📥 Fetching Nifty 100 data..."):
         st.stop()
 
 returns = ((df - df.iloc[0]) / df.iloc[0]) * 100
+
+# --- Top 5 markers per day ---
+day_top5 = returns.apply(lambda row: row.sort_values(ascending=False).head(5), axis=1)
+
+# --- Plot All Stocks ---
+st.markdown("### 📊 Nifty 100 Stock Returns with Top 5 Daily Markers")
+fig, ax = plt.subplots(figsize=(14, 7))
+
+# Plot all with lighter lines
+for ticker in df.columns:
+    ax.plot(returns.index, returns[ticker], color='gray', alpha=0.3, linewidth=0.8)
+
+# Plot top 10 with thinner colored lines
 final_returns = returns.iloc[-1].sort_values(ascending=False)
 top10 = final_returns.head(10)
+for ticker in top10.index:
+    ax.plot(returns.index, returns[ticker], linewidth=1.5, label=ticker)
 
-st.markdown("### 🏆 Top 10 Performing Nifty 100 Stocks Since April 1")
-fig, ax = plt.subplots(figsize=(12, 6))
-for ticker in df.columns:
-    if ticker in top10.index:
-        ax.plot(returns.index, returns[ticker], linewidth=2.5, label=ticker)
-        ax.text(returns.index[-1], returns[ticker].iloc[-1], ticker.replace(".NS", ""), fontsize=8, color='green')
-    else:
-        ax.plot(returns.index, returns[ticker], color='gray', alpha=0.2, linewidth=0.5)
+# Plot green dots for daily top 5
+for date in day_top5.index:
+    for ticker in day_top5.loc[date].index:
+        ax.plot(date, returns.loc[date, ticker], 'go', markersize=4)
+        ax.text(date, returns.loc[date, ticker], ticker.replace(".NS", ""), fontsize=5, color='green')
 
-ax.set_title("Nifty 100 Stock Returns (Apr 1 to Today)")
+ax.set_title("Nifty 100 Performance Since April 1, 2025")
 ax.set_ylabel("% Return")
 ax.set_xlabel("Date")
-ax.legend(loc='upper left', fontsize='small')
 ax.grid(True, linestyle='--', alpha=0.5)
+ax.legend(loc='upper left', fontsize='small')
 st.pyplot(fig)
 
-st.dataframe(top10.rename("% Return"))
+# --- Cluster Analysis ---
+st.markdown("### 🧠 Clustering Nifty 100 Stocks (5 Groups)")
+kmeans = KMeans(n_clusters=5, random_state=42, n_init='auto')
+cluster_labels = kmeans.fit_predict(returns.T)
+cluster_df = pd.DataFrame({'Ticker': returns.columns, 'Cluster': cluster_labels})
+
+# Plot per-cluster returns
+for c in sorted(cluster_df['Cluster'].unique()):
+    st.markdown(f"#### Cluster {c + 1}")
+    fig_cluster, ax_cluster = plt.subplots(figsize=(12, 5))
+    cluster_members = cluster_df[cluster_df['Cluster'] == c]['Ticker']
+    for ticker in cluster_members:
+        ax_cluster.plot(returns.index, returns[ticker], label=ticker.replace(".NS", ""), linewidth=1.5)
+    ax_cluster.set_title(f"Stock Returns - Cluster {c + 1}")
+    ax_cluster.set_ylabel("% Return")
+    ax_cluster.set_xlabel("Date")
+    ax_cluster.grid(True, linestyle='--', alpha=0.5)
+    ax_cluster.legend(fontsize='x-small', ncol=3)
+    st.pyplot(fig_cluster)
