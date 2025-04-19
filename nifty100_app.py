@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 from sklearn.cluster import KMeans
 import numpy as np
+from matplotlib import cm
 
 st.set_page_config(page_title="Nifty 100 Daily Returns", layout="wide")
 st.title("📈 Nifty 100 Performance Analysis (Clusters + Top Performers)")
@@ -51,13 +52,10 @@ with st.spinner("📥 Fetching Nifty 100 data..."):
 
 returns = ((df - df.iloc[0]) / df.iloc[0]) * 100
 
-# Transpose returns for clustering: rows=companies, columns=return on each date compared to Apr 1
 X = returns.T
 
-# --- Top 5 markers per day ---
 day_top5 = returns.apply(lambda row: row.sort_values(ascending=False).head(5), axis=1)
 
-# --- Plot All Stocks ---
 st.markdown("### 📊 Nifty 100 Stock Returns with Top 5 Daily Markers")
 fig, ax = plt.subplots(figsize=(14, 7))
 
@@ -81,7 +79,6 @@ ax.grid(True, linestyle='--', alpha=0.5)
 ax.legend(loc='upper left', fontsize='small')
 st.pyplot(fig)
 
-# --- Cluster Analysis ---
 st.markdown("### 🧠 Clustering Nifty 100 Stocks (5 Groups)")
 kmeans = KMeans(n_clusters=5, random_state=42, n_init='auto')
 cluster_labels = kmeans.fit_predict(X)
@@ -89,13 +86,20 @@ cluster_df = pd.DataFrame({'Ticker': X.index, 'Cluster': cluster_labels})
 
 cluster_means = X.groupby(cluster_labels).apply(lambda x: x.iloc[:, -1].mean())
 cluster_order = cluster_means.sort_values(ascending=False).index
+colors = cm.get_cmap('tab10', 5)
 
 for rank, cluster_id in enumerate(cluster_order, 1):
     st.markdown(f"#### Cluster {cluster_id + 1} — Rank #{rank} by Avg Return on Last Day")
     fig_cluster, ax_cluster = plt.subplots(figsize=(14, 6))
     cluster_members = cluster_df[cluster_df['Cluster'] == cluster_id]['Ticker']
+    cluster_color = colors(cluster_id)
+
     for ticker in cluster_members:
-        ax_cluster.plot(returns.index, returns.loc[:, ticker], label=ticker.replace(".NS", ""), linewidth=1.5)
+        ax_cluster.plot(returns.index, returns[ticker], label=ticker.replace(".NS", ""), linewidth=1.2, color=cluster_color)
+
+    avg_line = returns[cluster_members].mean(axis=1)
+    ax_cluster.plot(returns.index, avg_line, color=cluster_color, linestyle='--', linewidth=3, label='Cluster Avg')
+
     ax_cluster.set_title(f"Cluster {cluster_id + 1} — Stocks in Rank #{rank} Cluster")
     ax_cluster.set_ylabel("% Return")
     ax_cluster.set_xlabel("Date")
