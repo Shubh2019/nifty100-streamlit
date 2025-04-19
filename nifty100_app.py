@@ -36,7 +36,7 @@ end_date = datetime.today().strftime('%Y-%m-%d')
 
 with st.spinner("📥 Fetching Nifty 100 data..."):
     try:
-        df = yf.download(nifty_100_tickers, start=start_date, end=end_date)['Adj Close']
+        df = yf.download(nifty_100_tickers, start=start_date, end=end_date)['Close']
     except Exception as e:
         st.error(f"Download failed: {e}")
         st.stop()
