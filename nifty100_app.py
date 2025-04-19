@@ -51,9 +51,7 @@ with st.spinner("📥 Fetching Nifty 100 data..."):
         st.stop()
 
 returns = ((df - df.iloc[0]) / df.iloc[0]) * 100
-
 X = returns.T
-
 day_top5 = returns.apply(lambda row: row.sort_values(ascending=False).head(5), axis=1)
 
 st.markdown("### 📊 Nifty 100 Stock Returns with Top 5 Daily Markers")
@@ -79,6 +77,8 @@ ax.grid(True, linestyle='--', alpha=0.5)
 ax.legend(loc='upper left', fontsize='small')
 st.pyplot(fig)
 
+st.success("✅ Main chart loaded successfully. Now rendering clusters...")
+
 st.markdown("### 🧠 Clustering Nifty 100 Stocks (5 Groups)")
 kmeans = KMeans(n_clusters=5, random_state=42, n_init='auto')
 cluster_labels = kmeans.fit_predict(X)
@@ -88,21 +88,22 @@ cluster_means = X.groupby(cluster_labels).apply(lambda x: x.iloc[:, -1].mean())
 cluster_order = cluster_means.sort_values(ascending=False).index
 colors = cm.get_cmap('tab10', 5)
 
-for rank, cluster_id in enumerate(cluster_order, 1):
-    st.markdown(f"#### Cluster {cluster_id + 1} — Rank #{rank} by Avg Return on Last Day")
-    fig_cluster, ax_cluster = plt.subplots(figsize=(14, 6))
-    cluster_members = cluster_df[cluster_df['Cluster'] == cluster_id]['Ticker']
-    cluster_color = colors(cluster_id)
+with st.expander("📂 View Cluster Charts", expanded=True):
+    for rank, cluster_id in enumerate(cluster_order, 1):
+        st.markdown(f"#### Cluster {cluster_id + 1} — Rank #{rank} by Avg Return on Last Day")
+        fig_cluster, ax_cluster = plt.subplots(figsize=(14, 6))
+        cluster_members = cluster_df[cluster_df['Cluster'] == cluster_id]['Ticker']
+        cluster_color = colors(cluster_id)
 
-    for ticker in cluster_members:
-        ax_cluster.plot(returns.index, returns[ticker], label=ticker.replace(".NS", ""), linewidth=1.2, color=cluster_color)
+        for ticker in cluster_members:
+            ax_cluster.plot(returns.index, returns[ticker], label=ticker.replace(".NS", ""), linewidth=1.2, color=cluster_color)
 
-    avg_line = returns[cluster_members].mean(axis=1)
-    ax_cluster.plot(returns.index, avg_line, color=cluster_color, linestyle='--', linewidth=3, label='Cluster Avg')
+        avg_line = returns[cluster_members].mean(axis=1)
+        ax_cluster.plot(returns.index, avg_line, color=cluster_color, linestyle='--', linewidth=3, label='Cluster Avg')
 
-    ax_cluster.set_title(f"Cluster {cluster_id + 1} — Stocks in Rank #{rank} Cluster")
-    ax_cluster.set_ylabel("% Return")
-    ax_cluster.set_xlabel("Date")
-    ax_cluster.grid(True, linestyle='--', alpha=0.5)
-    ax_cluster.legend(fontsize='x-small', ncol=4)
-    st.pyplot(fig_cluster)
+        ax_cluster.set_title(f"Cluster {cluster_id + 1} — Stocks in Rank #{rank} Cluster")
+        ax_cluster.set_ylabel("% Return")
+        ax_cluster.set_xlabel("Date")
+        ax_cluster.grid(True, linestyle='--', alpha=0.5)
+        ax_cluster.legend(fontsize='x-small', ncol=4)
+        st.pyplot(fig_cluster)
