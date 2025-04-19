@@ -72,12 +72,13 @@ fig, ax = plt.subplots(figsize=(18, 10))
 for col in data_pct_change.columns:
     ax.plot(data_pct_change.index, data_pct_change[col], label=col, linewidth=0.8)
 
-# Highlight top 5 performers on each date with green dots
+# Highlight top 5 performers on each date with green dots and ticker labels
 highlight_dates = data_pct_change.index
 for date in highlight_dates:
     top5 = data_pct_change.loc[date].sort_values(ascending=False).head(5)
     for ticker in top5.index:
         ax.plot(date, top5[ticker], 'go', markersize=4)
+        ax.text(date, top5[ticker] + 1, ticker.replace('.NS', ''), fontsize=6, color='green', ha='center')
 
 ax.set_title("% Price Change of Nifty 100 Stocks Since April 1, 2025")
 ax.set_ylabel("% Change")
