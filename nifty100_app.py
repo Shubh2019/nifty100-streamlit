@@ -40,13 +40,13 @@ nifty_100_tickers = [
     'TORNTPHARM.NS', 'TRENT.NS', 'TVSMOTOR.NS', 'UBL.NS', 'ULTRACEMCO.NS',
     'UPL.NS', 'VEDL.NS', 'VOLTAS.NS', 'WIPRO.NS', 'ZEEL.NS'
 ]
+  # Add full list for production
 
-# Optional sector mapping (example, expand as needed)
+# Optional sector mapping
 sector_map = {
     'RELIANCE.NS': 'Energy', 'TCS.NS': 'IT', 'HDFCBANK.NS': 'Banking',
     'INFY.NS': 'IT', 'ICICIBANK.NS': 'Banking', 'HINDUNILVR.NS': 'FMCG',
     'ITC.NS': 'FMCG', 'SBIN.NS': 'Banking', 'AXISBANK.NS': 'Banking', 'LT.NS': 'Infrastructure'
-    # Extend this to all stocks as needed
 }
 
 # Load data
@@ -81,15 +81,16 @@ data_pct_change = ((data - data.iloc[0]) / data.iloc[0]) * 100
 # 🎞️ Animate cluster evolution
 if len(data_pct_change.index) > 6:
     st.markdown("### 🎞️ Animate Cluster Evolution")
+    slider_min = pd.to_datetime(data_pct_change.index[min(5, len(data_pct_change.index)-2)]).to_pydatetime()
+    slider_max = pd.to_datetime(data_pct_change.index[-1]).to_pydatetime()
     date_slider = st.slider(
         "Select Date for Clustering",
-        min_value=pd.to_datetime(data_pct_change.index[5]).to_pydatetime(),
-        max_value=pd.to_datetime(data_pct_change.index[-1]).to_pydatetime(),
-        value=pd.to_datetime(data_pct_change.index[-1]).to_pydatetime(),
+        min_value=slider_min,
+        max_value=slider_max,
+        value=slider_max,
         format="%Y-%m-%d"
     )
 
-    # Data up to selected date
     selected_data = data_pct_change.loc[:str(date_slider)]
     selected_returns = selected_data.T
     kmeans_dynamic = KMeans(n_clusters=10, random_state=42, n_init='auto')
@@ -98,8 +99,8 @@ if len(data_pct_change.index) > 6:
     fig_dyn, ax_dyn = plt.subplots(figsize=(18, 8))
     colors_dyn = cm.tab10(dynamic_clusters)
     for i, stock in enumerate(selected_returns.index):
-        ax_dyn.plot(selected_data.columns, selected_returns.loc[stock], label=stock, color=colors_dyn[i], linewidth=1)
-        ax_dyn.text(selected_data.columns[-1], selected_returns.loc[stock].iloc[-1], stock.replace('.NS',''), fontsize=6, color=colors_dyn[i])
+        ax_dyn.plot(selected_data.index, selected_returns.loc[stock], label=stock, color=colors_dyn[i], linewidth=1)
+        ax_dyn.text(selected_data.index[-1], selected_returns.loc[stock].iloc[-1], stock.replace('.NS',''), fontsize=6, color=colors_dyn[i])
     ax_dyn.set_title(f"Cluster Assignment on {date_slider.date()} (Animated View)")
     ax_dyn.set_xlabel("Date")
     ax_dyn.set_ylabel("% Return Since April 1")
