@@ -53,10 +53,8 @@ with st.spinner("📥 Fetching Nifty 100 data..."):
 returns = ((df - df.iloc[0]) / df.iloc[0]) * 100
 X = returns.T
 
-# --- Add stock selection box ---
-selected_stocks = st.multiselect("🔘 Select Stocks to Display in Main Chart:", options=df.columns.tolist(), default=df.columns.tolist())
-
 st.markdown("### 📊 Nifty 100 Stock Returns with Top 5 Daily Markers")
+selected_main = st.multiselect("🔘 Select Stocks for Main Chart:", options=df.columns.tolist(), default=df.columns.tolist())
 fig, ax = plt.subplots(figsize=(14, 7))
 
 for ticker in df.columns:
@@ -65,13 +63,13 @@ for ticker in df.columns:
 final_returns = returns.iloc[-1].sort_values(ascending=False)
 top10 = final_returns.head(10)
 for ticker in top10.index:
-    if ticker in selected_stocks:
+    if ticker in selected_main:
         ax.plot(returns.index, returns[ticker], linewidth=1.5, label=ticker)
 
 for date in returns.index:
     top5 = returns.loc[date].sort_values(ascending=False).head(5)
     for ticker in top5.index:
-        if ticker in selected_stocks:
+        if ticker in selected_main:
             ax.plot(date, returns.loc[date, ticker], 'go', markersize=4)
             ax.text(date, returns.loc[date, ticker], ticker.replace(".NS", ""), fontsize=5, ha='right', color='green')
 
@@ -99,11 +97,16 @@ with st.expander("📂 View Cluster Charts", expanded=True):
         cluster_members = cluster_df[cluster_df['Cluster'] == cluster_id]['Ticker']
         cluster_color = colors(cluster_id)
 
-        cluster_selection = st.multiselect(f"📌 Select stocks to display for Cluster {cluster_id + 1}", options=cluster_members.tolist(), default=cluster_members.tolist(), key=f"cluster_{cluster_id}")
+        selected_cluster = st.multiselect(
+            f"📌 Select Stocks for Cluster {cluster_id + 1}:",
+            options=cluster_members.tolist(),
+            default=cluster_members.tolist(),
+            key=f"cluster_select_{cluster_id}"
+        )
 
         fig_cluster, ax_cluster = plt.subplots(figsize=(14, 6))
 
-        for ticker in cluster_selection:
+        for ticker in selected_cluster:
             ax_cluster.plot(returns.index, returns[ticker], label=ticker.replace(".NS", ""), linewidth=1.2, color=cluster_color)
 
         avg_line = returns[cluster_members].mean(axis=1)
