@@ -65,8 +65,10 @@ top10 = final_returns.head(10)
 for ticker in top10.index:
     ax.plot(returns.index, returns[ticker], linewidth=1.5, label=ticker)
 
-for date in day_top5.index:
-    for ticker in day_top5.loc[date].index:
+# ✅ Fix: Only mark top 5 stocks per day with green dots and label
+for date in returns.index:
+    top_stocks = returns.loc[date].sort_values(ascending=False).head(5)
+    for ticker in top_stocks.index:
         ax.plot(date, returns.loc[date, ticker], 'go', markersize=4)
         ax.text(date, returns.loc[date, ticker], ticker.replace(".NS", ""), fontsize=5, color='green')
 
