@@ -53,8 +53,18 @@ with st.spinner("📥 Fetching Nifty 100 data..."):
 returns = ((df - df.iloc[0]) / df.iloc[0]) * 100
 X = returns.T
 
+# Maintain selection with session state
+if 'selected_main' not in st.session_state:
+    st.session_state.selected_main = df.columns.tolist()
+
+selected_main = st.multiselect(
+    "🔘 Select Stocks for Main Chart:",
+    options=df.columns.tolist(),
+    default=st.session_state.selected_main,
+    key='main_chart_selector'
+)
+
 st.markdown("### 📊 Nifty 100 Stock Returns with Top 5 Daily Markers")
-selected_main = st.multiselect("🔘 Select Stocks for Main Chart:", options=df.columns.tolist(), default=df.columns.tolist())
 fig, ax = plt.subplots(figsize=(14, 7))
 
 for ticker in df.columns:
@@ -97,11 +107,15 @@ with st.expander("📂 View Cluster Charts", expanded=True):
         cluster_members = cluster_df[cluster_df['Cluster'] == cluster_id]['Ticker']
         cluster_color = colors(cluster_id)
 
+        state_key = f"cluster_select_{cluster_id}"
+        if state_key not in st.session_state:
+            st.session_state[state_key] = cluster_members.tolist()
+
         selected_cluster = st.multiselect(
             f"📌 Select Stocks for Cluster {cluster_id + 1}:",
             options=cluster_members.tolist(),
-            default=cluster_members.tolist(),
-            key=f"cluster_select_{cluster_id}"
+            default=st.session_state[state_key],
+            key=state_key
         )
 
         fig_cluster, ax_cluster = plt.subplots(figsize=(14, 6))
