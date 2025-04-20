@@ -52,7 +52,6 @@ with st.spinner("📥 Fetching Nifty 100 data..."):
 
 returns = ((df - df.iloc[0]) / df.iloc[0]) * 100
 X = returns.T
-day_top5 = returns.apply(lambda row: row.sort_values(ascending=False).head(5), axis=1)
 
 st.markdown("### 📊 Nifty 100 Stock Returns with Top 5 Daily Markers")
 fig, ax = plt.subplots(figsize=(14, 7))
@@ -65,12 +64,12 @@ top10 = final_returns.head(10)
 for ticker in top10.index:
     ax.plot(returns.index, returns[ticker], linewidth=1.5, label=ticker)
 
-# ✅ Fix: Only mark top 5 stocks per day with green dots and label
+# ✅ Mark top 5 performers of each day with green dots and labels
 for date in returns.index:
-    top_stocks = returns.loc[date].sort_values(ascending=False).head(5)
-    for ticker in top_stocks.index:
+    top5 = returns.loc[date].sort_values(ascending=False).head(5)
+    for ticker in top5.index:
         ax.plot(date, returns.loc[date, ticker], 'go', markersize=4)
-        ax.text(date, returns.loc[date, ticker], ticker.replace(".NS", ""), fontsize=5, color='green')
+        ax.text(date, returns.loc[date, ticker], ticker.replace(".NS", ""), fontsize=5, ha='right', color='green')
 
 ax.set_title("Nifty 100 Performance Since April 1, 2025")
 ax.set_ylabel("% Return")
